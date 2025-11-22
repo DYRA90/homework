@@ -1,7 +1,7 @@
 Step 1: Install repmgr 
 
-yum -y  install repmgr16*
-dnf -y install repmgr16*
+yum -y  install repmgr_16*
+dnf -y install repmgr_16*
 
 
 Step 2: Configure PostgreSQL
@@ -35,11 +35,9 @@ host         all             all            0.0.0.0/0       scram-sha-256
 
 Step 5: Configure the repmgr file 
 
-cluster='failovertest'
-
 node_id=1
 node_name=node1
-
+priority = 100
 conninfo='host=node1 user=repmgr dbname=repmgr connect_timeout=2'
 ssh_options= '-q -o ConnectTimeout=10'
 data_directory='/var/lib/pgsql/16/data/'
@@ -58,27 +56,25 @@ repmgr_bindir='/usr/pgsql-16/bin/'
 repmgrd_pid_file='/var/lib/pgsql/repmgrd-16.pid'
 
 failover=automatic
-promote_command='/usr/pgsql-16/bin/repmgr standby promote -f /var/lib/pgsql/repmgr.conf --log-to-file'
-follow_command='/usr/pgsql-16/bin/repmgr standby follow -f /var/lib/pgsql/repmgr.conf --log-to-file --upstream-node-id=%n'
+promote_command='/usr/pgsql-16/bin/repmgr standby promote -f /etc/repmgr/16/repmgr.conf--log-to-file'
+follow_command='/usr/pgsql-16/bin/repmgr standby follow -f /etc/repmgr/16/repmgr.conf--log-to-file --upstream-node-id=%n'
 ############################################################################################################################
 
 Step 7: Register the primary server
 
-/usr/pgsql-16/bin/repmgr -f /var/lib/pgsql/repmgr.conf primary register
+/usr/pgsql-16/bin/repmgr -f /etc/repmgr/16/repmgr.conf primary register
 
 
 status of the cluster:
-/usr/pgsql-16/bin/repmgr -f /var/lib/pgsql/repmgr.conf  cluster show
+/usr/pgsql-16/bin/repmgr -f /etc/repmgr/16/repmgr.conf  cluster show
 
 ############################################################################################33
 
 Step 7: Build/clone the standby server
 
-cluster='failovertest'
-
 node_id=2
 node_name=node2
-
+priority = 90
 conninfo='host=host2 user=repmgr dbname=repmgr connect_timeout=2'
 ssh_options= '-q -o ConnectTimeout=10'
 data_directory='/var/lib/pgsql/16/data/'
@@ -109,11 +105,9 @@ follow_command='/usr/pgsql-16/bin/repmgr standby follow -f /var/lib/pgsql/repmgr
 
 ###########################################################################################################################
 
-cluster='failovertest'
-
 node_id=3
 node_name=node3
-
+priority = 80
 conninfo='host=host3 user=repmgr dbname=repmgr connect_timeout=2'
 ssh_options= '-q -o ConnectTimeout=10'
 data_directory='/var/lib/pgsql/16/data/'
@@ -132,24 +126,25 @@ repmgr_bindir='/usr/pgsql-16/bin/'
 repmgrd_pid_file='/var/lib/pgsql/repmgrd-16.pid'
 
 failover=automatic
-promote_command='/usr/pgsql-16/bin/repmgr standby promote -f /var/lib/pgsql/repmgr.conf --log-to-file'
-follow_command='/usr/pgsql-16/bin/repmgr standby follow -f /var/lib/pgsql/repmgr.conf --log-to-file --upstream-node-id=%n'
+promote_command='/usr/pgsql-16/bin/repmgr standby promote -f /etc/repmgr/16/repmgr.conf --log-to-file'
+follow_command='/usr/pgsql-16/bin/repmgr standby follow -f /etc/repmgr/16/repmgr.conf --log-to-file --upstream-node-id=%n'
 
 
 
 
-/usr/pgsql-16/bin/repmgr -h host1 -U repmgr -d repmgr -f /var/lib/pgsql/repmgr.conf standby clone --dry-run
+/usr/pgsql-16/bin/repmgr -h host1 -U repmgr -d repmgr -f /etc/repmgr/16/repmgr.confstandby clone --dry-run
 
-/usr/pgsql-16/bin/repmgr -h host1 -U repmgr -d repmgr -f /var/lib/pgsql/repmgr.conf standby clone 
+/usr/pgsql-16/bin/repmgr -h host1 -U repmgr -d repmgr -f /etc/repmgr/16/repmgr.conf standby clone 
 
-/usr/pgsql-16/bin/repmgr -f /var/lib/pgsql/repmgr.conf standby register
+/usr/pgsql-16/bin/repmgr -f /etc/repmgr/16/repmgr.conf standby register
 
 ###############################################################################################################
 
 Step 10: Start repmgrd daemon process
 
-/usr/pgsql-16/bin/repmgrd -f /var/lib/pgsql/repmgr.conf
+/usr/pgsql-16/bin/repmgrd -f /etc/repmgr/16/repmgr.conf
 
 
 Richard Yossa 
+
 Sr PostgreSQL DBA
