@@ -1,0 +1,155 @@
+Step 1: Install repmgr 
+
+yum -y  install repmgr16*
+dnf -y install repmgr16*
+
+
+Step 2: Configure PostgreSQL
+
+max_wal_senders = 10
+max_replication_slots = 10
+wal_level = 'replica'
+hot_standby = on
+archive_mode = on
+archive_command = '/bin/true'
+shared_preload_libraries = 'repmgr'
+
+Step 3: Create users 
+
+create user repmgr;
+alter user repmgr with superuser;
+create database repmgr with owner repmgr;
+
+
+Step 4: Configure pg_hba.conf
+local       all              all                             peer
+host       replication      repmgr        host1/24          trust
+host       replication      repmgr        host2/24          trust
+host       replication      repmgr        host2/24          trust
+host       repmgr           repmgr        host1/24          trust
+host       repmgr           repmgr        host2/24          trust
+host       repmgr           repmgr        host2/24          trust
+host         all             all          127.0.0.1/32    scram-sha-256
+host         all             all            ::1/128         scram-sha-256
+host         all             all            0.0.0.0/0       scram-sha-256
+
+Step 5: Configure the repmgr file 
+
+cluster='failovertest'
+
+node_id=1
+node_name=node1
+
+conninfo='host=node1 user=repmgr dbname=repmgr connect_timeout=2'
+ssh_options= '-q -o ConnectTimeout=10'
+data_directory='/var/lib/pgsql/16/data/'
+
+log_level='INFO'
+log_file='/var/lib/pgsql/log/repmgr.log'
+log_status_interval=300
+
+monitor_interval_secs=2
+reconnect_attempts=6
+reconnect_interval=10
+connection_check_type=connection
+
+pg_bindir='/usr/pgsql-16/bin/'
+repmgr_bindir='/usr/pgsql-16/bin/'
+repmgrd_pid_file='/var/lib/pgsql/repmgrd-16.pid'
+
+failover=automatic
+promote_command='/usr/pgsql-16/bin/repmgr standby promote -f /var/lib/pgsql/repmgr.conf --log-to-file'
+follow_command='/usr/pgsql-16/bin/repmgr standby follow -f /var/lib/pgsql/repmgr.conf --log-to-file --upstream-node-id=%n'
+############################################################################################################################
+
+Step 7: Register the primary server
+
+/usr/pgsql-16/bin/repmgr -f /var/lib/pgsql/repmgr.conf primary register
+
+
+status of the cluster:
+/usr/pgsql-16/bin/repmgr -f /var/lib/pgsql/repmgr.conf  cluster show
+
+############################################################################################33
+
+Step 7: Build/clone the standby server
+
+cluster='failovertest'
+
+node_id=2
+node_name=node2
+
+conninfo='host=host2 user=repmgr dbname=repmgr connect_timeout=2'
+ssh_options= '-q -o ConnectTimeout=10'
+data_directory='/var/lib/pgsql/16/data/'
+
+log_level='INFO'
+log_file='/var/lib/pgsql/log/repmgr.log'
+log_status_interval=300
+
+monitor_interval_secs=2
+reconnect_attempts=6
+reconnect_interval=10
+connection_check_type=connection
+
+pg_bindir='/usr/pgsql-16/bin/'
+repmgr_bindir='/usr/pgsql-16/bin/'
+repmgrd_pid_file='/var/lib/pgsql/repmgrd-16.pid'
+
+failover=automatic
+promote_command='/usr/pgsql-16/bin/repmgr standby promote -f /var/lib/pgsql/repmgr.conf --log-to-file'
+follow_command='/usr/pgsql-16/bin/repmgr standby follow -f /var/lib/pgsql/repmgr.conf --log-to-file --upstream-node-id=%n'
+
+
+/usr/pgsql-16/bin/repmgr -h host1 -U repmgr -d repmgr -f /var/lib/pgsql/repmgr.conf standby clone --dry-run
+
+/usr/pgsql-16/bin/repmgr -h host1 -U repmgr -d repmgr -f /var/lib/pgsql/repmgr.conf standby clone 
+
+/usr/pgsql-16/bin/repmgr -f /var/lib/pgsql/repmgr.conf standby register
+
+###########################################################################################################################
+
+cluster='failovertest'
+
+node_id=3
+node_name=node3
+
+conninfo='host=host3 user=repmgr dbname=repmgr connect_timeout=2'
+ssh_options= '-q -o ConnectTimeout=10'
+data_directory='/var/lib/pgsql/16/data/'
+
+log_level='INFO'
+log_file='/var/lib/pgsql/log/repmgr.log'
+log_status_interval=300
+
+monitor_interval_secs=2
+reconnect_attempts=6
+reconnect_interval=10
+connection_check_type=connection
+
+pg_bindir='/usr/pgsql-16/bin/'
+repmgr_bindir='/usr/pgsql-16/bin/'
+repmgrd_pid_file='/var/lib/pgsql/repmgrd-16.pid'
+
+failover=automatic
+promote_command='/usr/pgsql-16/bin/repmgr standby promote -f /var/lib/pgsql/repmgr.conf --log-to-file'
+follow_command='/usr/pgsql-16/bin/repmgr standby follow -f /var/lib/pgsql/repmgr.conf --log-to-file --upstream-node-id=%n'
+
+
+
+
+/usr/pgsql-16/bin/repmgr -h host1 -U repmgr -d repmgr -f /var/lib/pgsql/repmgr.conf standby clone --dry-run
+
+/usr/pgsql-16/bin/repmgr -h host1 -U repmgr -d repmgr -f /var/lib/pgsql/repmgr.conf standby clone 
+
+/usr/pgsql-16/bin/repmgr -f /var/lib/pgsql/repmgr.conf standby register
+
+###############################################################################################################
+
+Step 10: Start repmgrd daemon process
+
+/usr/pgsql-16/bin/repmgrd -f /var/lib/pgsql/repmgr.conf
+
+
+Richard Yossa 
+Sr PostgreSQL DBA
